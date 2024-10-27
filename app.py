@@ -5,30 +5,30 @@ import pandas as pd
 if 'data' not in st.session_state:
     st.session_state.data = pd.DataFrame(columns=['Year', 'Month', 'Petrol (L)', 'Diesel (L)', 'Gas (L)', 
                                                   'Electricity (kWh)', 'Waste (kg)', 'Transportation (km)', 
-                                                  'Scope 1 Emissions', 'Scope 2 Emissions', 'Scope 3 Emissions'])
+                                                  'Scope 1 Emissions (MTCO2e)', 'Scope 2 Emissions (MTCO2e)', 'Scope 3 Emissions (MTCO2e)'])
 
-# Define emission factors (example values)
+# Define Defra emission factors in MTCO2e
 EMISSION_FACTORS = {
-    'Petrol': 2.31,  # kg CO2 per liter of petrol
-    'Diesel': 2.68,  # kg CO2 per liter of diesel
-    'Gas': 2.75,     # kg CO2 per liter of gas
-    'Electricity': 0.5,  # kg CO2 per kWh (this is an example; it varies by region)
-    'Waste': 0.5,    # kg CO2 per kg of waste
-    'Transportation': 0.2 # kg CO2 per km (this is an example)
+    'Petrol': 0.00231,  # MTCO2e per liter of petrol
+    'Diesel': 0.00268,  # MTCO2e per liter of diesel
+    'Gas': 0.00275,     # MTCO2e per liter of gas
+    'Electricity': 0.000233,  # MTCO2e per kWh (this is an example; it varies by region)
+    'Waste': 0.0005,    # MTCO2e per kg of waste
+    'Transportation': 0.0002 # MTCO2e per km (this is an example)
 }
 
 # Function to calculate total emissions
 def calculate_totals(data):
-    data['Scope 1 Emissions'] = (data['Petrol (L)'] * EMISSION_FACTORS['Petrol'] +
-                                  data['Diesel (L)'] * EMISSION_FACTORS['Diesel'] +
-                                  data['Gas (L)'] * EMISSION_FACTORS['Gas'])
-    data['Scope 2 Emissions'] = data['Electricity (kWh)'] * EMISSION_FACTORS['Electricity']
-    data['Scope 3 Emissions'] = (data['Waste (kg)'] * EMISSION_FACTORS['Waste'] +
-                                  data['Transportation (km)'] * EMISSION_FACTORS['Transportation'])
+    data['Scope 1 Emissions (MTCO2e)'] = (data['Petrol (L)'] * EMISSION_FACTORS['Petrol'] +
+                                           data['Diesel (L)'] * EMISSION_FACTORS['Diesel'] +
+                                           data['Gas (L)'] * EMISSION_FACTORS['Gas'])
+    data['Scope 2 Emissions (MTCO2e)'] = data['Electricity (kWh)'] * EMISSION_FACTORS['Electricity']
+    data['Scope 3 Emissions (MTCO2e)'] = (data['Waste (kg)'] * EMISSION_FACTORS['Waste'] +
+                                           data['Transportation (km)'] * EMISSION_FACTORS['Transportation'])
     
-    total_scope1 = data['Scope 1 Emissions'].sum()
-    total_scope2 = data['Scope 2 Emissions'].sum()
-    total_scope3 = data['Scope 3 Emissions'].sum()
+    total_scope1 = data['Scope 1 Emissions (MTCO2e)'].sum()
+    total_scope2 = data['Scope 2 Emissions (MTCO2e)'].sum()
+    total_scope3 = data['Scope 3 Emissions (MTCO2e)'].sum()
     return total_scope1, total_scope2, total_scope3
 
 # Title of the app
@@ -65,9 +65,9 @@ if not st.session_state.data.empty:
     st.dataframe(st.session_state.data)
 
     # Display total emissions
-    st.write(f"**Total Scope 1 Emissions:** {total_scope1:.2f} kg CO2")
-    st.write(f"**Total Scope 2 Emissions:** {total_scope2:.2f} kg CO2")
-    st.write(f"**Total Scope 3 Emissions:** {total_scope3:.2f} kg CO2")
+    st.write(f"**Total Scope 1 Emissions:** {total_scope1:.4f} MTCO2e")
+    st.write(f"**Total Scope 2 Emissions:** {total_scope2:.4f} MTCO2e")
+    st.write(f"**Total Scope 3 Emissions:** {total_scope3:.4f} MTCO2e")
 
     # Allow users to edit entries
     for index, row in st.session_state.data.iterrows():
