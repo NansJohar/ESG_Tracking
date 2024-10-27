@@ -1,37 +1,59 @@
 import streamlit as st
+import pandas as pd
 
-# Define emission factors
-EMISSION_FACTORS_SCOPE1 = {'diesel': 2.68, 'petrol': 2.31, 'gas': 2.05}
-EMISSION_FACTORS_SCOPE2 = {'electricity': 0.92}
-EMISSION_FACTORS_SCOPE3 = {'waste': 0.10, 'transportation': 0.50}
+# Initialize session state for data storage
+if 'data' not in st.session_state:
+    st.session_state.data = pd.DataFrame(columns=['Year', 'Month', 'Scope 1', 'Scope 2', 'Scope 3'])
 
-# Target emissions
-target_emissions = {'scope1': 800, 'scope2': 900, 'scope3': 300}
+# Function to calculate total emissions
+def calculate_totals(data):
+    total_scope1 = data['Scope 1'].sum()
+    total_scope2 = data['Scope 2'].sum()
+    total_scope3 = data['Scope 3'].sum()
+    return total_scope1, total_scope2, total_scope3
 
-# Streamlit UI
-st.title("ESG Tracking Platform")
-st.write("Enter monthly data for Scope 1, 2, and 3 components:")
+# Title of the app
+st.title("ESG Tracking App")
 
-# Input fields for monthly data
-diesel = st.number_input("Diesel (liters)", min_value=0.0, step=1.0)
-petrol = st.number_input("Petrol (liters)", min_value=0.0, step=1.0)
-gas = st.number_input("Gas (cubic meters)", min_value=0.0, step=1.0)
-electricity = st.number_input("Electricity (kWh)", min_value=0.0, step=1.0)
-waste = st.number_input("Waste (tons)", min_value=0.0, step=1.0)
-transportation = st.number_input("Transportation (km)", min_value=0.0, step=1.0)
+# User input for year and month
+year = st.selectbox("Select Year", range(2020, 2031))
+month = st.selectbox("Select Month", ["January", "February", "March", "April", "May", "June", 
+                                       "July", "August", "September", "October", "November", "December"])
 
-# Calculate emissions
-if st.button("Calculate Emissions"):
-    scope1_emissions = diesel * EMISSION_FACTORS_SCOPE1['diesel'] + petrol * EMISSION_FACTORS_SCOPE1['petrol'] + gas * EMISSION_FACTORS_SCOPE1['gas']
-    scope2_emissions = electricity * EMISSION_FACTORS_SCOPE2['electricity']
-    scope3_emissions = waste * EMISSION_FACTORS_SCOPE3['waste'] + transportation * EMISSION_FACTORS_SCOPE3['transportation']
+# User inputs for emissions
+scope1 = st.number_input("Enter Scope 1 emissions (Diesel, Petrol, Gas)", min_value=0.0)
+scope2 = st.number_input("Enter Scope 2 emissions (Purchased Electricity)", min_value=0.0)
+scope3 = st.number_input("Enter Scope 3 emissions (Waste, Transportation)", min_value=0.0)
 
-    # Calculate gaps
-    scope1_lacking = target_emissions['scope1'] - scope1_emissions
-    scope2_lacking = target_emissions['scope2'] - scope2_emissions
-    scope3_lacking = target_emissions['scope3'] - scope3_emissions
+# Button to submit data
+if st.button("Submit Data"):
+    new_entry = pd.DataFrame([[year, month, scope1, scope2, scope3]], columns=['Year', 'Month', 'Scope 1', 'Scope 2', 'Scope 3'])
+    st.session_state.data = pd.concat([st.session_state.data, new_entry], ignore_index=True)
+    st.success("Data submitted successfully!")
 
-    # Display results
-    st.write(f"**Scope 1 Emissions:** {scope1_emissions:.2f} kg CO2, lacking by {scope1_lacking:.2f}")
-    st.write(f"**Scope 2 Emissions:** {scope2_emissions:.2f} kg CO2, lacking by {scope2_lacking:.2f}")
-    st.write(f"**Scope 3 Emissions:** {scope3_emissions:.2f} kg CO2, lacking by {scope3_lacking:.2f}")
+# Displaying current entries
+st.subheader("Current Emissions Data")
+if not st.session_state.data.empty:
+    # Display data in a table
+    st.dataframe(st.session_state.data)
+
+    # Calculate and display total emissions
+    total_scope1, total_scope2, total_scope3 = calculate_totals(st.session_state.data)
+    st.write(f"Total Scope 1 Emissions: {total_scope1}")
+    st.write(f"Total Scope 2 Emissions: {total_scope2}")
+    st.write(f"Total Scope 3 Emissions: {total_scope3}")
+
+    # Allow users to edit entries
+    for index, row in st.session_state.data.iterrows():
+        if st.button(f"Edit Entry for {row['Month']} {row['Year']}", key=f"edit_{index}"):
+            new_scope1 = st.number_input("Edit Scope 1 emissions", value=row['Scope 1'], min_value=0.0, key=f"scope1_{index}")
+            new_scope2 = st.number_input("Edit Scope 2 emissions", value=row['Scope 2'], min_value=0.0, key=f"scope2_{index}")
+            new_scope3 = st.number_input("Edit Scope 3 emissions", value=row['Scope 3'], min_value=0.0, key=f"scope3_{index}")
+            
+            if st.button("Update", key=f"update_{index}"):
+                st.session_state.data.at[index, 'Scope 1'] = new_scope1
+                st.session_state.data.at[index, 'Scope 2'] = new_scope2
+                st.session_state.data.at[index, 'Scope 3'] = new_scope3
+                st.success("Entry updated successfully!")
+else:
+    st.write("No data available.")
